@@ -5,12 +5,13 @@ import 'package:lottie/lottie.dart';
 import 'package:me/bloc/message/message_cubit.dart';
 import 'package:me/bloc/project/project_cubit.dart';
 import 'package:me/data/models/message.dart';
-import 'package:me/data/models/project.dart';
 import 'package:me/data/utils/contants.dart';
 import 'package:me/data/utils/responsive.dart';
 import 'package:me/data/utils/ui_helpers.dart';
 import 'package:me/ui/widgets/loading.dart';
 import 'package:me/ui/widgets/social_accounts.dart';
+import 'package:string_contains/string_contains.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -23,201 +24,205 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
 
+  final formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 6), () {
-      _showForm(context);
+      welcome(context);
     });
   }
 
-  void _showForm(BuildContext context) {
-    showDialog(
+  Future<void> welcome(BuildContext context) async => showModalBottomSheet(
         context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: const BorderSide(color: Colors.orange),
-              ),
-              backgroundColor: Colors.black,
-              title: const Text('Hey There!', textAlign: TextAlign.center),
-              content: BlocConsumer<MessageCubit, MessageState>(
-                listener: (context, state) {
-                  if (state is MessageSent) {
-                    Navigator.of(context).pop();
-                    showMessage(context, 'Success!', state.message);
-                  } else if (state is MessageError) {
-                    Navigator.of(context).pop();
-                    showMessage(context, 'Error!', state.message);
-                  }
-                },
-                builder: (context, state) {
-                  if (state is MessageSending) {
-                    return const Loading();
-                  }
-                  return SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _nameController,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          validator: (input) =>
-                              input!.validateName() ? null : 'Invalid name',
-                          decoration: const InputDecoration(
-                            hintText: "Enter your name",
+        backgroundColor: Colors.black,
+        builder: (context) => Form(
+          key: formKey,
+          child: BlocConsumer<MessageCubit, MessageState>(
+            listener: (context, state) {
+              if (state is MessageSent) {
+                Navigator.of(context).pop();
+                showMessage(context, 'Success!', state.message);
+              } else if (state is MessageError) {
+                Navigator.of(context).pop();
+                showMessage(context, 'Error!', state.message);
+              }
+            },
+            builder: (context, state) {
+              if (state is MessageSending) {
+                return const Loading();
+              }
+              return SingleChildScrollView(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Hey There! Welcome!',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(
+                        height: 8.0,
+                      ),
+                      TextFormField(
+                        controller: _nameController,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: (input) =>
+                            input?.isEmpty == true || (input?.length ?? 0) < 3
+                                ? 'Please enter your name!'
+                                : null,
+                        decoration: const InputDecoration(
+                          hintText: "Enter your name",
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 8.0,
+                      ),
+                      TextFormField(
+                        controller: _emailController,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: (input) => input.containsEmail()
+                            ? null
+                            : 'Please enter valid email!',
+                        decoration: const InputDecoration(
+                          hintText: "Enter your email",
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 8.0,
+                      ),
+                      TextFormField(
+                        controller: _messageController,
+                        decoration: const InputDecoration(
+                          hintText: "Enter your message",
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 8.0,
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (formKey.currentState?.validate() == true) {
+                            context.read<MessageCubit>().sendMessage(
+                                  Message(
+                                    name: _nameController.text,
+                                    email: _emailController.text,
+                                    message: _messageController.text,
+                                    dateTime: DateTime.now().toIso8601String(),
+                                  ),
+                                );
+                          } else {
+                            showMessage(
+                              context,
+                              'Error!',
+                              'Please enter valid details!',
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 56.0),
+                          backgroundColor: Colors.orange,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
                           ),
                         ),
-                        const SizedBox(
-                          height: 8.0,
+                        child: Text(
+                          'Submit',
+                          style: Theme.of(context).textTheme.labelLarge,
                         ),
-                        TextFormField(
-                          controller: _emailController,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          validator: (input) => input!.validateEmail()
-                              ? null
-                              : 'Please enter valid email!',
-                          decoration: const InputDecoration(
-                            hintText: "Enter your email",
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 8.0,
-                        ),
-                        TextFormField(
-                          controller: _messageController,
-                          decoration: const InputDecoration(
-                            hintText: "Enter your message",
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 8.0,
-                        ),
-                        ElevatedButton(
-                          child: Text(
-                            'Submit',
-                            style: Theme.of(context).textTheme.button,
-                          ),
-                          onPressed: () {
-                            if (_nameController.text.isNotEmpty &&
-                                _emailController.text.isNotEmpty &&
-                                _nameController.text.validateName() &&
-                                _emailController.text.validateEmail()) {
-                              context.read<MessageCubit>().sendMessage(
-                                    Message(
-                                      name: _nameController.text,
-                                      email: _emailController.text,
-                                      message: _messageController.text,
-                                      dateTime:
-                                          DateTime.now().toIso8601String(),
-                                    ),
-                                  );
-                            } else {
-                              showMessage(context, 'Error!',
-                                  'Please enter valid details!');
-                            }
-                          },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: OutlinedButton(
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 56.0),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.0),
                             ),
-                            primary: Colors.orange,
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(
+                            'Cancel',
+                            style: Theme.of(context).textTheme.labelLarge,
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: OutlinedButton(
-                            child: Text(
-                              'Cancel',
-                              style: Theme.of(context).textTheme.button,
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 56.0),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        )
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ));
-  }
-
-  void _showLinks(BuildContext context, Project project) {
-    showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: const BorderSide(color: Colors.orange),
-              ),
-              backgroundColor: Colors.black,
-              title: project.name?.isNotEmpty == true
-                  ? Text('${project.name}', textAlign: TextAlign.center)
-                  : const SizedBox.shrink(),
-              content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    project.demoUrl?.isNotEmpty == true
-                        ? ListTile(
-                            title: const Text('Demo Video'),
-                            trailing: const Icon(Icons.play_arrow),
-                            onTap: () {
-                              //launch(project.demoUrl);
-                              launchURL(context, '${project.demoUrl}');
-                            },
-                          )
-                        : const SizedBox.shrink(),
-                    project.appUrl?.isNotEmpty == true
-                        ? ListTile(
-                            title: const Text('Application Link'),
-                            trailing: const Icon(Icons.android),
-                            onTap: () {
-                              //launch(project.appUrl);
-                              launchURL(context, '${project.appUrl}');
-                            },
-                          )
-                        : const SizedBox.shrink(),
-                    project.webUrl?.isNotEmpty == true
-                        ? ListTile(
-                            title: const Text('Web Link'),
-                            trailing: const Icon(Icons.language),
-                            onTap: () {
-                              launchURL(context, '${project.webUrl}');
-                            },
-                          )
-                        : const SizedBox.shrink(),
-                  ],
+                      )
+                    ],
+                  ),
                 ),
-              ),
-              actions: <Widget>[
-                ElevatedButton(
-                  child: Text(
-                    'Okay!',
-                    style: Theme.of(context).textTheme.button,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    primary: Colors.orange,
-                  ),
-                )
-              ],
-            ));
-  }
+              );
+            },
+          ),
+        ),
+      );
+
+  // void _showLinks(BuildContext context, Project project) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       surfaceTintColor: Colors.black45,
+  //       title: project.name?.isNotEmpty == true
+  //           ? Text('${project.name}', textAlign: TextAlign.center)
+  //           : const SizedBox.shrink(),
+  //       content: SingleChildScrollView(
+  //         child: Column(
+  //           children: [
+  //             project.demoUrl?.isNotEmpty == true
+  //                 ? ListTile(
+  //                     title: const Text('Demo Video'),
+  //                     trailing: const Icon(Icons.play_arrow),
+  //                     onTap: () {
+  //                       launchURL(context, '${project.demoUrl}');
+  //                     },
+  //                   )
+  //                 : const SizedBox.shrink(),
+  //             project.appUrl?.isNotEmpty == true
+  //                 ? ListTile(
+  //                     title: const Text('Application Link'),
+  //                     trailing: const Icon(Icons.android),
+  //                     onTap: () {
+  //                       //launch(project.appUrl);
+  //                       launchURL(context, '${project.appUrl}');
+  //                     },
+  //                   )
+  //                 : const SizedBox.shrink(),
+  //             project.webUrl?.isNotEmpty == true
+  //                 ? ListTile(
+  //                     title: const Text('Web Link'),
+  //                     trailing: const Icon(Icons.language),
+  //                     onTap: () {
+  //                       launchURL(context, '${project.webUrl}');
+  //                     },
+  //                   )
+  //                 : const SizedBox.shrink(),
+  //           ],
+  //         ),
+  //       ),
+  //       actions: <Widget>[
+  //         ElevatedButton(
+  //           onPressed: () {
+  //             Navigator.of(context).pop();
+  //           },
+  //           style: ElevatedButton.styleFrom(
+  //             minimumSize: const Size(double.infinity, 56.0),
+  //             backgroundColor: Colors.orange,
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(12.0),
+  //             ),
+  //           ),
+  //           child: Text(
+  //             'Okay!',
+  //             style: Theme.of(context).textTheme.labelLarge,
+  //           ),
+  //         )
+  //       ],
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -239,11 +244,14 @@ class _MyHomePageState extends State<MyHomePage> {
                     contentPadding: const EdgeInsets.all(0),
                     title: const Text('About'),
                     subtitle: const Text(
-                        'This is a simple Portfolio web application made with Flutter. This app is made by Ravi Kovind. This app is open sourced on GitHub.'),
+                      'This is a simple Portfolio web application made with Flutter.',
+                    ),
                     trailing: const Icon(FontAwesomeIcons.github),
                     onTap: () {
                       launchURL(
-                          context, 'https://github.com/ravikovind/portfolio');
+                        context,
+                        'https://github.com/ravikovind/portfolio',
+                      );
                     },
                   ),
                 ],
@@ -253,7 +261,7 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
             icon: const Icon(Icons.email),
             onPressed: () {
-              _showForm(context);
+              welcome(context);
             },
           ),
         ],
@@ -265,15 +273,18 @@ class _MyHomePageState extends State<MyHomePage> {
               isDeviceDesktop(context)
                   ? Align(
                       alignment: Alignment.bottomRight,
-                      child: Lottie.asset('assets/animations/json_2.json',
-                          fit: BoxFit.contain,
-                          reverse: true,
-                          height: MediaQuery.of(context).size.width * 0.5),
+                      child: Lottie.asset(
+                        'assets/animations/json_2.json',
+                        fit: BoxFit.contain,
+                        reverse: true,
+                        height: MediaQuery.of(context).size.width * 0.5,
+                      ),
                     )
                   : const SizedBox.shrink(),
               Container(
                 padding: EdgeInsets.symmetric(
-                    horizontal: MediaQuery.of(context).size.width * 0.1),
+                  horizontal: MediaQuery.of(context).size.width * 0.05,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -281,38 +292,39 @@ class _MyHomePageState extends State<MyHomePage> {
                     const SizedBox(height: 16.0),
                     Text(
                       "Hey there! I am ",
-                      style: TextStyle(
-                          color: Colors.orange,
-                          fontSize: isDeviceDesktop(context) ? 20 : 16.0),
-                    ),
-                    const SizedBox(
-                      height: 16.0,
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                wordSpacing: 2.0,
+                              ),
                     ),
                     Text(
                       "Ravi Kovind",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: isDeviceDesktop(context) ? 48.0 : 36.0,
-                      ),
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: isDeviceDesktop(context) ? 72.0 : 48.0,
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     Text(
-                      "Flutter Dev || Learner || NITain.",
-                      style: TextStyle(
-                        fontSize: isDeviceDesktop(context) ? 24 : 16.0,
-                      ),
+                      "Flutter Dev || Lead Dev || NIT Allahabad",
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w200,
+                          ),
+                    ),
+                    const SizedBox(
+                      height: 16.0,
                     ),
                     const SocialAccounts(
                       alignment: MainAxisAlignment.start,
                     ),
                     const SizedBox(
-                      height: 16.0,
+                      height: 32.0,
                     ),
                     Text(
-                      "I have recently graduated from NIT Allahabad,\nspecializing in building & designing \nexceptional websites, \napplications, and everything in between.",
-                      style: TextStyle(
-                        fontSize: isDeviceDesktop(context) ? 18.0 : 16.0,
-                        letterSpacing: 2.0,
-                      ),
+                      "Unleashing Limitless Potential:\nExpertly Crafting Cutting-Edge\nCross-Platform Applications,\nExceptional Websites,\nand Everything in Between\nand Redefining Digital Excellence.",
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            letterSpacing: 2.4,
+                            wordSpacing: 2.4,
+                          ),
                     ),
                     const SizedBox(
                       height: 16.0,
@@ -320,9 +332,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4.0),
+                          borderRadius: BorderRadius.circular(16.0),
                         ),
-                        side: const BorderSide(width: 2, color: Colors.orange),
+                        side: BorderSide(
+                          width: 1,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                       onPressed: () {
                         launchURL(context, 'mailto:$kEmail');
@@ -334,10 +349,11 @@ class _MyHomePageState extends State<MyHomePage> {
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           'Get In Touch',
-                          style: Theme.of(context).textTheme.button?.copyWith(
-                                fontSize:
-                                    isDeviceDesktop(context) ? 18.0 : 16.0,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    fontSize:
+                                        isDeviceDesktop(context) ? 18.0 : 16.0,
+                                  ),
                         ),
                       ),
                     ),
@@ -351,29 +367,32 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           Container(
             padding: EdgeInsets.symmetric(
-                horizontal: MediaQuery.of(context).size.width * 0.1,
-                vertical: 16.0),
+              horizontal: MediaQuery.of(context).size.width * 0.05,
+              vertical: 16.0,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                SizedBox(
-                  height: 16.0,
+              children: [
+                const SizedBox(
+                  height: 8.0,
                 ),
                 Text(
                   "About",
-                  style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 24.0,
                 ),
                 Text(
                   kAbout,
                   textAlign: TextAlign.start,
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    letterSpacing: 2.0,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        letterSpacing: 2.4,
+                        wordSpacing: 2.4,
+                      ),
                 ),
               ],
             ),
@@ -381,7 +400,11 @@ class _MyHomePageState extends State<MyHomePage> {
           BlocConsumer<ProjectCubit, ProjectState>(
             listener: (context, state) {
               if (state is ProjectError) {
-                showMessage(context, 'Error!', state.message);
+                showMessage(
+                  context,
+                  'Error!',
+                  state.message,
+                );
               }
             },
             builder: (context, state) {
@@ -396,8 +419,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 }
                 return Container(
                   padding: EdgeInsets.symmetric(
-                      horizontal: MediaQuery.of(context).size.width * 0.1,
-                      vertical: 16.0),
+                    horizontal: MediaQuery.of(context).size.width * 0.05,
+                    vertical: 16.0,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,10 +429,14 @@ class _MyHomePageState extends State<MyHomePage> {
                       const SizedBox(
                         height: 16.0,
                       ),
-                      const Text(
+                      Text(
                         "Projects",
-                        style: TextStyle(
-                            fontSize: 24.0, fontWeight: FontWeight.bold),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(
                         height: 24.0,
@@ -419,10 +447,103 @@ class _MyHomePageState extends State<MyHomePage> {
                         physics: const NeverScrollableScrollPhysics(),
                         itemBuilder: (context, index) {
                           final project = projects[index];
-                          return ListTile(
-                            title: Text('${project.name}'),
+                          return ExpansionTile(
+                            title: Text(
+                              '${project.name}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    fontSize:
+                                        isDeviceDesktop(context) ? 18.0 : 16.0,
+                                    letterSpacing: 2.4,
+                                    wordSpacing: 2.4,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer,
+                                  ),
+                            ),
                             subtitle: Text('${project.description}'),
-                            onTap: () => _showLinks(context, project),
+                            childrenPadding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
+                            ),
+                            children: [
+                              Builder(builder: (context) {
+                                if (project.appUrl.isNullOrEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return ListTile(
+                                  title: Text(
+                                    'Try Application',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(
+                                          fontSize: isDeviceDesktop(context)
+                                              ? 18.0
+                                              : 16.0,
+                                          letterSpacing: 2.4,
+                                          wordSpacing: 2.4,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondaryContainer,
+                                        ),
+                                  ),
+                                  trailing: const Icon(
+                                    Icons.android,
+                                    color: Colors.green,
+                                  ),
+                                  onTap: () {
+                                    launchURL(context, '${project.appUrl}');
+                                  },
+                                );
+                              }),
+                              Builder(builder: (context) {
+                                if (project.webUrl.isNullOrEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                final webUrl = project.webUrl.notNullValue;
+
+                                /// load this url in webview sized box media query 0.5
+                                return SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height,
+                                  child: WebViewWidget(
+                                    controller: WebViewController()
+                                      ..loadRequest(
+                                        Uri.parse(webUrl),
+                                      ),
+                                  ),
+                                );
+
+                                // return ListTile(
+                                //   title: Text(
+                                //     'Check Website',
+                                //     style: Theme.of(context)
+                                //         .textTheme
+                                //         .labelLarge
+                                //         ?.copyWith(
+                                //           fontSize: isDeviceDesktop(context)
+                                //               ? 18.0
+                                //               : 16.0,
+                                //           letterSpacing: 2.4,
+                                //           wordSpacing: 2.4,
+                                //           color:
+                                //               Theme.of(context).colorScheme.error,
+                                //         ),
+                                //   ),
+                                //   trailing: const Icon(
+                                //     Icons.language,
+                                //     color: Colors.blue,
+                                //   ),
+                                //   onTap: () {
+                                //     launchURL(context, '${project.webUrl}');
+                                //   },
+                                // );
+                              }),
+                            ],
                           );
                         },
                       )
@@ -434,68 +555,82 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           ),
           Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.1),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const SizedBox(
-                    height: 16.0,
-                  ),
-                  const Text("Get in Touch",
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                          fontSize: 24.0, fontWeight: FontWeight.bold)),
-                  const Text(
-                    "Currently looking for new Opportunities.\nI’m available for any information needed from my end.",
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4.0),
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.1),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const SizedBox(
+                  height: 16.0,
+                ),
+                Text(
+                  "Get in Touch",
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      side: const BorderSide(
-                        width: 1.0,
-                        color: Colors.orange,
+                ),
+                Text(
+                  "Open for new Opportunities.\nI’m available for any information needed from my end.",
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        letterSpacing: 2.4,
+                        wordSpacing: 2.4,
                       ),
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16.0),
                     ),
-                    onPressed: () {
-                      launchURL(context, 'mailto:$kEmail');
-                    },
-                    icon: const Icon(
-                      Icons.mail,
-                    ),
-                    label: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Text(
-                        kEmail,
-                        style: Theme.of(context).textTheme.caption,
-                      ),
+                    side: const BorderSide(
+                      width: 1.0,
+                      color: Colors.orange,
                     ),
                   ),
-                  const SizedBox(
-                    height: 24,
+                  onPressed: () {
+                    launchURL(context, 'mailto:$kEmail');
+                  },
+                  icon: const Icon(
+                    Icons.mail,
                   ),
-                  const SocialAccounts(),
-                  const SizedBox(
-                    height: 16,
+                  label: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Text(
+                      kEmail,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
-                  const Text(
-                    "thank you for Visiting.",
-                  ),
-                  const Text(
-                    "Made with Love in India",
-                  ),
-                  const SizedBox(
-                    height: 24,
-                  ),
-                ],
-              ))
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+                const SocialAccounts(),
+                const SizedBox(
+                  height: 16,
+                ),
+                const Text(
+                  "Thank you for Visiting.",
+                ),
+
+                /// all rights reserved @ravikovind ${DateTime.now().year} 🎉 text
+                const SizedBox(
+                  height: 8,
+                ),
+                Text(
+                  "© ${DateTime.now().year} Ravi Kovind.\nMade with Love❤️ in India 🇮🇳",
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+              ],
+            ),
+          )
         ],
       ),
     );

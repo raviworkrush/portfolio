@@ -8,5 +8,5 @@ const String kInstagram = 'https://instagram.com/ravi_kovind';
 const String kFacebook = 'https://www.facebook.com/theravikovind/';
 const String kWebsite = 'https://ravikovind.github.io/';
 const String kAbout =
-    'I have recently graduated from NIT Allahabad. I was a backbencher throughout my schooling & college. My technical expertise includes cross-platform Application development using Flutter with 1+ year experience in developing user-friendly Application and basic knowledge of programming  languages (including C, Java, SQL, PHP).\nI am a self-taught developer and I am always looking to learn new technologies and languages.';
-const String kFontFamily = 'Poppins';
+    'Experienced Developer passionate about building reliable, scalable, and user-centered solutions. NIT Allahabad alum with a strong engineering background. Architect of secure and high-performance software systems, leading cross-functional teams. Continuous learner, staying at the forefront of industry trends and emerging technologies. Driven by fresh ideas and innovative solutions to propel startup growth. Thrives in fast-paced environments, excelling in problem-solving and analytical thinking. Adept communicator, fostering seamless collaboration and project success.';
+const String kFontFamily = 'Urbanist';

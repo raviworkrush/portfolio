@@ -2,11 +2,11 @@ import 'package:http/http.dart' as http;
 import 'package:me/data/models/message.dart';
 import 'package:me/data/models/project.dart';
 
-
 class APIService {
   Future<List<Project>> fetchProjects() async {
     try {
-      final response = await http.get(Uri.parse('https://script.google.com/macros/s/AKfycbybg2YLApS964dNOB8UJE7K3bKRA2obfIBxYGwDY7zkAV2ONr2-/exec'));
+      final response = await http.get(Uri.parse(
+          'https://script.google.com/macros/s/AKfycbybg2YLApS964dNOB8UJE7K3bKRA2obfIBxYGwDY7zkAV2ONr2-/exec'));
       if (response.statusCode == 200) {
         final projects = projectsFromJson(response.body);
         return projects;
