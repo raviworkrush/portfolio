@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+// import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:me/bloc/logging/app_logging.dart';
 import 'package:me/bloc/message/message_cubit.dart';
 import 'package:me/bloc/project/project_cubit.dart';
@@ -15,13 +15,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   /// register license assets/fonts/OFL.txt
-  LicenseRegistry.addLicense(() async* {
-    final license = await rootBundle.loadString('assets/fonts/OFL.txt');
-    yield LicenseEntryWithLineBreaks(['urbanist'], license);
-  });
+  // LicenseRegistry.addLicense(() async* {
+  //   final license = await rootBundle.loadString('assets/fonts/OFL.txt');
+  //   yield LicenseEntryWithLineBreaks(['urbanist'], license);
+  // });
 
-  /// use web plugin for removing # from url
-  setUrlStrategy(PathUrlStrategy());
+  // /// use web plugin for removing # from url
+  // setUrlStrategy(PathUrlStrategy());
   Bloc.observer = Logging();
   runApp(const MyApp());
 }

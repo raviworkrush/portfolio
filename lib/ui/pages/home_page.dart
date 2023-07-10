@@ -463,6 +463,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         .primaryContainer,
                                   ),
                             ),
+                            initiallyExpanded: true,
                             subtitle: Text('${project.description}'),
                             childrenPadding: const EdgeInsets.symmetric(
                               horizontal: 16.0,
